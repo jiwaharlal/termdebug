@@ -810,6 +810,15 @@ func s:HandleDisasmMsg(msg)
   endif
 endfunc
 
+function! s:ParseVarinfoPy(varinfo)
+  py3 << EOF
+  import vim
+
+  var_str = vim.eval("a:varinfo");
+  vim.command( 'return 1' )
+EOF
+endfunction
+
 func s:ParseVarinfo(varinfo)
   let dict = {}
   let nameIdx = matchstrpos(a:varinfo, '{name="\([^"]*\)"')
@@ -835,26 +844,44 @@ func s:SpacesString(num)
   return ret
 endfunc
 
+func s:AdjStringToLen(str, val)
+  let curlen = len(a:str)
+  echom "curlen = " . curlen
+  if curlen >= a:val
+    let ret = a:str[:a:val - 2] . ' '
+  else
+    let ret = a:str . s:SpacesString(a:val - curlen)
+  endif
+  return ret
+endfunc
+
 func s:HandleVariablesMsg(msg)
   let curwinid = win_getid(winnr())
   if win_gotoid(s:varwin)
 
+    let type_width = 20
+    let name_width = 20
+    if exists('g:termdebug_config')
+      let type_width = get(g:termdebug_config, 'type_col_width', 20)
+      let name_width = get(g:termdebug_config, 'name_col_width', 20)
+    endif
+
     silent normal! gg0"_dG
     let spaceBuffer = 20
-    call setline(1, 'Type' .
-	  \ s:SpacesString(16) .
-	  \ 'Name' .
-	  \ s:SpacesString(16) .
-	  \ 'Value')
+    call setline(1, s:AdjStringToLen('Type', type_width) .
+                \ s:AdjStringToLen('Name', name_width) .
+                \ 'Value')
+
     let cnt = 1
     let capture = '{name=".\{-}",\%(arg=".\{-}",\)\{0,1\}type=".\{-}"\%(,value=".\{-}"\)\{0,1\}}'
     let varinfo = matchstr(a:msg, capture, 0, cnt)
+
+    echom 'Variables message: ' . a:msg
+
     while varinfo != ''
       let vardict = s:ParseVarinfo(varinfo)
-      call setline(cnt + 1, vardict['type'] .
-	    \ s:SpacesString(max([20 - len(vardict['type']), 1])) .
-	    \ vardict['name'] .
-	    \ s:SpacesString(max([20 - len(vardict['name']), 1])) .
+      call setline(cnt + 1, s:AdjStringToLen(vardict['type'], type_width) .
+	    \ s:AdjStringToLen(vardict['name'], name_width) .
 	    \ vardict['value'])
       let cnt += 1
       let varinfo = matchstr(a:msg, capture, 0, cnt)
