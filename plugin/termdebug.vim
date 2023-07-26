@@ -810,21 +810,49 @@ func s:HandleDisasmMsg(msg)
   endif
 endfunc
 
-function! s:ParseVarinfoPy(varinfo)
+function! s:ParseVarsMsgPy(msg)
+  let res=[]
   py3 << EOF
-  import vim
+import vim
 
-  var_str = vim.eval("a:varinfo");
-  vim.command( 'return 1' )
+msg = vim.eval("a:msg");
+
+name_str = '{name="'
+val_str = '",value="'
+name_idx = msg.find(name_str)
+while name_idx != -1:
+    value_idx = msg.find(val_str, name_idx + len(name_str))
+    name = msg[name_idx + len(name_str) : value_idx]
+
+    name_idx = msg.find(name_str, value_idx)
+    end_idx = name_idx - 3 if name_idx != -1 else -3
+
+    value = msg[value_idx + len(val_str) : end_idx]
+
+    # un-escape
+    escape = False
+    val = ''
+    for c in value:
+        if escape:
+            val += c
+            escape = False
+            continue
+        if c == '\\':
+            escape = True
+            continue
+        val += c
+
+    # print(f'{value} - {value[:2]} - {value[-2:]} - \\"')
+
+    vim.command(f'call add(res, {{ \'name\':\'{name}\', \'value\':\'{val}\' }})')
 EOF
+  return res
 endfunction
 
 func s:ParseVarinfo(varinfo)
   let dict = {}
   let nameIdx = matchstrpos(a:varinfo, '{name="\([^"]*\)"')
   let dict['name'] = a:varinfo[nameIdx[1] + 7 : nameIdx[2] - 2]
-  let typeIdx = matchstrpos(a:varinfo, ',type="\([^"]*\)"')
-  let dict['type'] = a:varinfo[typeIdx[1] + 7 : typeIdx[2] - 2]
   let valueIdx = matchstrpos(a:varinfo, ',value="\([^"]*\)"}')
   if valueIdx[1] == -1
     let dict['value'] = 'Complex value'
@@ -868,24 +896,17 @@ func s:HandleVariablesMsg(msg)
 
     silent normal! gg0"_dG
     let spaceBuffer = 20
-    call setline(1, s:AdjStringToLen('Type', type_width) .
-                \ s:AdjStringToLen('Name', name_width) .
-                \ 'Value')
+    call setline(1, s:AdjStringToLen('Name', name_width) . 'Value')
 
     let cnt = 1
-    let capture = '{name=".\{-}",\%(arg=".\{-}",\)\{0,1\}type=".\{-}"\%(,value=".\{-}"\)\{0,1\}}'
-    let varinfo = matchstr(a:msg, capture, 0, cnt)
 
     echom 'Variables message: ' . a:msg
 
-    while varinfo != ''
-      let vardict = s:ParseVarinfo(varinfo)
-      call setline(cnt + 1, s:AdjStringToLen(vardict['type'], type_width) .
-	    \ s:AdjStringToLen(vardict['name'], name_width) .
-	    \ vardict['value'])
+    let vardicts = s:ParseVarsMsgPy(a:msg)
+    for vardict in vardicts
+      call setline(cnt + 1, s:AdjStringToLen(vardict['name'], name_width) . vardict['value'])
       let cnt += 1
-      let varinfo = matchstr(a:msg, capture, 0, cnt)
-    endwhile
+    endfor
   endif
   call win_gotoid(curwinid)
 endfunc
@@ -1427,7 +1448,7 @@ func s:GotoVariableswinOrCreateIt()
   endif
 
   if s:running
-    call s:SendCommand('-stack-list-variables 2')
+    call s:SendCommand('-stack-list-variables 1')
   endif
 endfunc
 
@@ -1475,7 +1496,7 @@ func s:HandleCursor(msg)
   endif
 
   if s:running && s:stopped && bufwinnr('Termdebug-variables-listing') != -1
-    call s:SendCommand('-stack-list-variables 2')
+    call s:SendCommand('-stack-list-variables 1')
   endif
 
   if a:msg =~ '^\(\*stopped\|=thread-selected\)' && filereadable(fname)
