@@ -75,6 +75,18 @@ let s:parsing_disasm_msg = 0
 let s:asm_lines = []
 let s:asm_addr = ''
 
+
+  py3 << EOF
+import os.path as p
+import sys
+import vim
+import parse_messages
+
+root_folder = p.normpath( p.join( vim.eval( 's:script_folder_path' ), '..' ) )
+sys.path[ 0:0 ] = [ p.join( root_folder, 'python' ) ]
+
+EOF
+
 " Take a breakpoint number as used by GDB and turn it into an integer.
 " The breakpoint may contain a dot: 123.4 -> 123004
 " The main breakpoint has a zero subid.
@@ -810,6 +822,10 @@ func s:HandleDisasmMsg(msg)
   endif
 endfunc
 
+function! s:ParseVarsMsgPy2(msg)
+    return py3eval('parse_messages.parse_locals_msg(' . msg . ')')
+endfunc
+
 function! s:ParseVarsMsgPy(msg)
   let res=[]
   py3 << EOF
@@ -902,7 +918,7 @@ func s:HandleVariablesMsg(msg)
 
     echom 'Variables message: ' . a:msg
 
-    let vardicts = s:ParseVarsMsgPy(a:msg)
+    let vardicts = s:ParseVarsMsgPy2(a:msg)
     for vardict in vardicts
       call setline(cnt + 1, s:AdjStringToLen(vardict['name'], name_width) . vardict['value'])
       let cnt += 1
