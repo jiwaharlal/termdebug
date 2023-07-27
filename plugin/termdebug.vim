@@ -75,15 +75,19 @@ let s:parsing_disasm_msg = 0
 let s:asm_lines = []
 let s:asm_addr = ''
 
+let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
 
   py3 << EOF
 import os.path as p
 import sys
 import vim
-import parse_messages
 
 root_folder = p.normpath( p.join( vim.eval( 's:script_folder_path' ), '..' ) )
-sys.path[ 0:0 ] = [ p.join( root_folder, 'python' ) ]
+local_python_path = p.join( root_folder, 'python' )
+print("local python path: " + local_python_path)
+sys.path.append(local_python_path)
+
+import parse_messages
 
 EOF
 
@@ -823,7 +827,10 @@ func s:HandleDisasmMsg(msg)
 endfunc
 
 function! s:ParseVarsMsgPy2(msg)
-    return py3eval('parse_messages.parse_locals_msg(' . msg . ')')
+  py3 << EOF
+msg = vim.eval("a:msg")
+EOF
+  return py3eval("parse_messages.parse_locals_msg(msg)")
 endfunc
 
 function! s:ParseVarsMsgPy(msg)
@@ -890,7 +897,6 @@ endfunc
 
 func s:AdjStringToLen(str, val)
   let curlen = len(a:str)
-  echom "curlen = " . curlen
   if curlen >= a:val
     let ret = a:str[:a:val - 2] . ' '
   else
@@ -915,8 +921,6 @@ func s:HandleVariablesMsg(msg)
     call setline(1, s:AdjStringToLen('Name', name_width) . 'Value')
 
     let cnt = 1
-
-    echom 'Variables message: ' . a:msg
 
     let vardicts = s:ParseVarsMsgPy2(a:msg)
     for vardict in vardicts
