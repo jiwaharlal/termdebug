@@ -691,6 +691,19 @@ func s:EndTermDebug(job, status)
     doauto <nomodeline> User TermdebugStopPre
   endif
 
+  " close variables window and buffer, not sure this is the best place for it
+  let curwinid = win_getid(winnr())
+  if win_gotoid(s:varwin)
+    set nomodified
+    close
+  endif
+  call win_gotoid(curwinid)
+
+  let s:varbuf = bufnr('Termdebug-variables-listing')
+  if s:varbuf > 0
+    exe 'bwipe!' . s:varbuf
+  endif
+
   exe 'bwipe! ' . s:commbuf
   unlet s:gdbwin
 
@@ -1455,9 +1468,9 @@ func s:GotoVariableswinOrCreateIt()
     setlocal buftype=nofile
     setlocal modifiable
 
-    let varbuf = bufnr('Termdebug-variables-listing')
-    if varbuf > 0
-      exe 'buffer' . varbuf
+    let s:varbuf = bufnr('Termdebug-variables-listing')
+    if s:varbuf > 0
+      exe 'buffer' . s:varbuf
     else
       exe 'file Termdebug-variables-listing'
     endif
