@@ -1126,6 +1126,9 @@ class Tr1UnorderedSetPrinter:
             return izip (counter, Tr1HashtableIterator (self.hashtable()))
         return izip (counter, StdHashtableIterator (self.hashtable()))
 
+    def display_hint (self):
+        return 'array'
+
 class Tr1UnorderedMapPrinter:
     "Print a std::unordered_map or tr1::unordered_map"
 
