@@ -84,7 +84,6 @@ import vim
 
 root_folder = p.normpath( p.join( vim.eval( 's:script_folder_path' ), '..' ) )
 local_python_path = p.join( root_folder, 'python' )
-print("local python path: " + local_python_path)
 sys.path.append(local_python_path)
 
 import parse_messages
