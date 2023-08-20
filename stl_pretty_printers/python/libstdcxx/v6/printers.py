@@ -524,10 +524,14 @@ class StdVectorPrinter:
             bl = 8 * itype.sizeof
             length   = bl * (finish - start) + fo
             capacity = bl * (end - start)
+            if length == 0:
+                return '{}'
             return None
             # return ('%s<bool> of length %d, capacity %d'
                     # % (self.typename, int (length), int (capacity)))
         else:
+            if start == finish:
+                return '{}'
             return None
             # return ('%s of length %d, capacity %d'
                     # % (self.typename, int (finish - start), int (end - start)))
@@ -1112,8 +1116,10 @@ class Tr1UnorderedSetPrinter:
         return self.val['_M_h']
 
     def to_string (self):
-        return None
         count = self.hashtable()['_M_element_count']
+        if count == 0:
+            return '{}'
+        return None
         return '%s with %s' % (self.typename, num_elements(count))
 
     @staticmethod

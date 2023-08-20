@@ -33,4 +33,4 @@ def test_parse_quoted_token():
     msg = '"\\"job done\\""}]'
     expected = '"job done"'
     # pytest.set_trace()
-    assert parse_messages.parse_quoted_token(msg, 0) == expected
+    assert parse_messages.parse_quoted_token(msg, 0, len(msg)) == expected

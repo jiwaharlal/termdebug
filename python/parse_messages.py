@@ -1,7 +1,7 @@
 from typing import *
 
 # reads quoted token, returns unquoted token and position after closing quote
-def parse_quoted_token(msg: str, first_quote: int, end=len(msg)):
+def parse_quoted_token(msg: str, first_quote: int, end: int):
     escaped = False
     res = ''
     for i in range(first_quote + 1, end):
@@ -35,7 +35,10 @@ def parse_locals_msg(msg):
         vardict['name'] = name
 
         val_idx = msg.find(val_str, name_idx + len(name_str) + len(name), vardict_end)
-        val = '{}' if val_idx == -1 else parse_quoted_token(msg, val_idx + len(val_str) - 1, vardict_end)
+        val = '{}'
+        if val_idx != -1:
+            val = parse_quoted_token( msg, val_idx + len(val_str) - 1, vardict_end)
+
         vardict['value'] = val
 
         name_idx = next_name_idx
