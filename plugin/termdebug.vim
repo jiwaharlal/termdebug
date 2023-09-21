@@ -930,9 +930,9 @@ func s:HandleVariablesMsg(msg)
 
     silent normal! gg0"_dG
     let spaceBuffer = 20
-    call setline(1, s:AdjStringToLen('Name', name_width) . 'Value')
 
-    let cnt = 1
+    "call setline(1, s:AdjStringToLen('Name', name_width) . 'Value')
+    let cnt = 0
 
     let vardicts = s:ParseVarsMsgPy2(a:msg)
     for vardict in vardicts

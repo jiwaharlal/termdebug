@@ -801,8 +801,12 @@ class StdMapPrinter:
         self.val = val
 
     def to_string (self):
-        return '%s with %s' % (self.typename,
-                               num_elements(len(RbtreeIterator (self.val))))
+        # return '%s with %s' % (self.typename,
+                               # num_elements(len(RbtreeIterator (self.val))))
+        count = num_elements(len(RbtreeIterator (self.val)))
+        if count == 0:
+            return '{}'
+        return None
 
     def children (self):
         node = lookup_node_type('_Rb_tree_node', self.val.type).pointer()
