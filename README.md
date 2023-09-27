@@ -4,6 +4,7 @@ termdebug with local variables window
 This repo contains modified termdebug plugin exptacted from Vim, plus modified
 pretty-printers extracted from GCC, tailored together to show local variables in a handy (for the author) way
 while debugging in Vim.
+[![asciicast](https://asciinema.org/a/610718.png)](https://asciinema.org/a/610718)
 
 ## Installation
 - Clone this repo somewhere
